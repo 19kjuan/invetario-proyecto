@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración{% endblock %}
+{% block page_title %}Configuración del Sistema{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> <strong>Configuración del Sistema</strong> - Aquí puedes ajustar los parámetros generales de la aplicación.
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-gear"></i> Configuración General
+            </div>
+            <div class="card-body">
+                <form method="POST" action="#">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre del Negocio</label>
+                        <input type="text" class="form-control" value="Inventario Tenis & Pádel" name="nombre_negocio">
+                        <small class="text-muted">Nombre que aparecerá en la aplicación</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Moneda</label>
+                        <select class="form-select" name="moneda">
+                            <option value="COP" selected>COP - Peso Colombiano</option>
+                            <option value="USD">USD - Dólar Estadounidense</option>
+                            <option value="EUR">EUR - Euro</option>
+                            <option value="MXN">MXN - Peso Mexicano</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Umbral de Alerta de Stock Bajo</label>
+                        <input type="number" class="form-control" value="5" name="umbral_stock" min="1">
+                        <small class="text-muted">Número de unidades para activar alertas de stock bajo</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Productos por Página</label>
+                        <input type="number" class="form-control" value="10" name="items_pagina" min="5" max="50">
+                        <small class="text-muted">Cantidad de productos a mostrar por página</small>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" disabled>
+                        <i class="bi bi-check-circle"></i> Guardar Configuración
+                    </button>
+                    <small class="text-muted d-block mt-2">Funcionalidad próximamente</small>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-shield-check"></i> Seguridad
+            </div>
+            <div class="card-body">
+                <h6>Recomendaciones de Seguridad</h6>
+                <ul>
+                    <li>Cambia las contraseñas predeterminadas</li>
+                    <li>Usa contraseñas seguras (mínimo 8 caracteres)</li>
+                    <li>Cierra sesión al terminar de usar la aplicación</li>
+                    <li>No compartas tus credenciales</li>
+                    <li>Realiza copias de seguridad periódicas</li>
+                </ul>
+                
+                <hr>
+                
+                <h6>Información del Sistema</h6>
+                <p><strong>Versión:</strong> 1.0.0</p>
+                <p><strong>Base de Datos:</strong> MySQL</p>
+                <p><strong>Framework:</strong> Flask (Python)</p>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header bg-danger text-white">
+                <i class="bi bi-exclamation-triangle"></i> Zona de Peligro
+            </div>
+            <div class="card-body">
+                <h6>Resetear Base de Datos</h6>
+                <p class="text-danger">
+                    <i class="bi bi-exclamation-triangle"></i> 
+                    <strong>ADVERTENCIA:</strong> Esta acción eliminará TODOS los datos del sistema de forma permanente.
+                </p>
+                <p class="text-muted">
+                    Para resetear la base de datos, ejecuta el siguiente comando en la terminal:
+                </p>
+                <code>python reset_db.py</code>
+                <p class="text-muted mt-2">
+                    Después, deberás crear nuevamente el usuario administrador con:
+                </p>
+                <code>python crear_admin.py</code>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-database"></i> Estadísticas del Sistema
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h3 class="text-primary">{{ stats.total_productos if stats else 0 }}</h3>
+                        <p class="text-muted">Productos Registrados</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="text-success">{{ stats.total_ventas if stats else 0 }}</h3>
+                        <p class="text-muted">Ventas Realizadas</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="text-warning">{{ stats.total_usuarios if stats else 0 }}</h3>
+                        <p class="text-muted">Usuarios Activos</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="text-info">{{ stats.total_clientes if stats else 0 }}</h3>
+                        <p class="text-muted">Clientes Registrados</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-question-circle"></i> Ayuda y Soporte
+            </div>
+            <div class="card-body">
+                <h6>¿Necesitas ayuda?</h6>
+                <p>Consulta la documentación completa en el archivo <code>README.md</code> o la guía rápida en <code>INICIO_RAPIDO.md</code></p>
+                
+                <h6 class="mt-3">Comandos Útiles</h6>
+                <ul>
+                    <li><code>python run.py</code> - Iniciar la aplicación</li>
+                    <li><code>python crear_admin.py</code> - Crear usuario administrador</li>
+                    <li><code>python reset_db.py</code> - Resetear base de datos</li>
+                    <li><code>flask --app run create-sample-data</code> - Crear datos de ejemplo</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

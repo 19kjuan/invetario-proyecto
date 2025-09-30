@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}Ventas{% endblock %}
+{% block page_title %}Gestión de Ventas{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="bi bi-cart-check"></i> Historial de Ventas</h2>
+            <a href="{{ url_for('ventas.nueva') }}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Nueva Venta
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Resumen de ventas -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card success">
+            <div class="card-body">
+                <h6 class="text-muted mb-2">Total Ventas (Período)</h6>
+                <h3 class="mb-0">${{ "%.2f"|format(total_ventas) }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="mb-3">Ventas por Categoría</h6>
+                <div class="row">
+                    {% for stat in stats_categorias %}
+                    <div class="col-md-4">
+                        <strong>{{ stat.categoria }}:</strong> {{ stat.cantidad }} unidades<br>
+                        <small class="text-muted">${{ "%.2f"|format(stat.total) }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('ventas.listar') }}" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Fecha Inicio</label>
+                        <input type="date" name="fecha_inicio" class="form-control" value="{{ filtros.fecha_inicio }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Fecha Fin</label>
+                        <input type="date" name="fecha_fin" class="form-control" value="{{ filtros.fecha_fin }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Estado</label>
+                        <select name="estado" class="form-select">
+                            <option value="">Todos</option>
+                            <option value="pendiente" {% if filtros.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                            <option value="completada" {% if filtros.estado == 'completada' %}selected{% endif %}>Completada</option>
+                            <option value="cancelada" {% if filtros.estado == 'cancelada' %}selected{% endif %}>Cancelada</option>
+                            <option value="anulada" {% if filtros.estado == 'anulada' %}selected{% endif %}>Anulada</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Método de Pago</label>
+                        <select name="metodo_pago" class="form-select">
+                            <option value="">Todos</option>
+                            <option value="efectivo" {% if filtros.metodo_pago == 'efectivo' %}selected{% endif %}>Efectivo</option>
+                            <option value="tarjeta" {% if filtros.metodo_pago == 'tarjeta' %}selected{% endif %}>Tarjeta</option>
+                            <option value="transferencia" {% if filtros.metodo_pago == 'transferencia' %}selected{% endif %}>Transferencia</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-search"></i> Filtrar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de ventas -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-list-ul"></i> Lista de Ventas ({{ ventas.total }} ventas)
+            </div>
+            <div class="card-body">
+                {% if ventas.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Fecha</th>
+                                <th>Cliente</th>
+                                <th>Total</th>
+                                <th>Método de Pago</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for venta in ventas.items %}
+                            <tr>
+                                <td><strong>#{{ venta.id }}</strong></td>
+                                <td>{{ venta.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>
+                                    {% if venta.cliente %}
+                                        {{ venta.cliente.nombre }} {{ venta.cliente.apellido or '' }}
+                                    {% else %}
+                                        <span class="text-muted">Cliente general</span>
+                                    {% endif %}
+                                </td>
+                                <td><strong>${{ "%.2f"|format(venta.total) }}</strong></td>
+                                <td>
+                                    <span class="badge badge-custom bg-info">
+                                        {{ venta.metodo_pago|capitalize }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if venta.estado == 'completada' %}
+                                        <span class="badge bg-success">Completada</span>
+                                    {% elif venta.estado == 'pendiente' %}
+                                        <span class="badge bg-warning">Pendiente</span>
+                                    {% elif venta.estado == 'anulada' %}
+                                        <span class="badge bg-danger">Anulada</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ venta.estado|capitalize }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('ventas.detalle', id=venta.id) }}" 
+                                       class="btn btn-sm btn-outline-primary" title="Ver detalles">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Paginación -->
+                {% if ventas.pages > 1 %}
+                <nav aria-label="Paginación de ventas">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item {% if not ventas.has_prev %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('ventas.listar', page=ventas.prev_num) }}">
+                                Anterior
+                            </a>
+                        </li>
+                        
+                        {% for page_num in ventas.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                            {% if page_num %}
+                                <li class="page-item {% if page_num == ventas.page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('ventas.listar', page=page_num) }}">
+                                        {{ page_num }}
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        <li class="page-item {% if not ventas.has_next %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('ventas.listar', page=ventas.next_num) }}">
+                                Siguiente
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+                {% endif %}
+                
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-cart-x" style="font-size: 4rem; color: #ccc;"></i>
+                    <h4 class="mt-3 text-muted">No se encontraron ventas</h4>
+                    <p class="text-muted">Intenta ajustar los filtros o registra una nueva venta</p>
+                    <a href="{{ url_for('ventas.nueva') }}" class="btn btn-success mt-3">
+                        <i class="bi bi-plus-circle"></i> Registrar Primera Venta
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Productos más vendidos -->
+{% if productos_mas_vendidos %}
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-trophy"></i> Top 5 Productos Más Vendidos (Período Seleccionado)
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Cantidad Vendida</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for producto in productos_mas_vendidos %}
+                            <tr>
+                                <td><strong>{{ producto.nombre }}</strong></td>
+                                <td><span class="badge bg-primary">{{ producto.cantidad }}</span></td>
+                                <td>${{ "%.2f"|format(producto.total) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

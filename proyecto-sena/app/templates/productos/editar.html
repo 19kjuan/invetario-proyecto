@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Producto{% endblock %}
+{% block page_title %}Editar Producto{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-pencil"></i> Editar Producto: {{ producto.nombre }}
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ form.codigo.label }}</label>
+                            {{ form.codigo(class="form-control", value=producto.codigo) }}
+                            {% if form.codigo.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.codigo.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ form.categoria.label }}</label>
+                            {{ form.categoria(class="form-select") }}
+                            {% if form.categoria.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.categoria.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.nombre.label }}</label>
+                        {{ form.nombre(class="form-control", value=producto.nombre) }}
+                        {% if form.nombre.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.nombre.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.descripcion.label }}</label>
+                        {{ form.descripcion(class="form-control", rows="3") }}
+                        {% if form.descripcion.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.descripcion.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ form.marca.label }}</label>
+                            {{ form.marca(class="form-control") }}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ form.talla.label }}</label>
+                            {{ form.talla(class="form-control") }}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ form.color.label }}</label>
+                            {{ form.color(class="form-control") }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ form.precio_compra.label }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                {{ form.precio_compra(class="form-control") }}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ form.precio_venta.label }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                {{ form.precio_venta(class="form-control") }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Stock Actual</label>
+                        <input type="text" class="form-control" value="{{ producto.stock }}" disabled>
+                        <small class="text-muted">Para ajustar el stock, usa el botón "Ajustar Inventario"</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.stock_minimo.label }}</label>
+                        {{ form.stock_minimo(class="form-control") }}
+                        <small class="text-muted">Recibirás alertas cuando el stock esté por debajo de este valor</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Imagen Actual</label>
+                        {% if producto.imagen %}
+                        <div class="mb-2">
+                            <img src="{{ url_for('static', filename='uploads/' + producto.imagen) }}" 
+                                 alt="{{ producto.nombre }}" 
+                                 style="max-width: 200px; border-radius: 8px;">
+                        </div>
+                        {% else %}
+                        <p class="text-muted">No hay imagen cargada</p>
+                        {% endif %}
+                        
+                        <label class="form-label mt-2">{{ form.imagen.label }}</label>
+                        {{ form.imagen(class="form-control") }}
+                        <small class="text-muted">Deja en blanco para mantener la imagen actual</small>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <a href="{{ url_for('productos.detalle', id=producto.id) }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <a href="{{ url_for('productos.ajustar_inventario', id=producto.id) }}" class="btn btn-warning">
+                                <i class="bi bi-arrow-repeat"></i> Ajustar Inventario
+                            </a>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,105 @@
+from flask import Flask, request, redirect, url_for, flash, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
+
+app = Flask(__name__)
+app.secret_key = "super_secret_key"  # cámbialo por algo seguro
+
+# Configuración de la base de datos (usamos pymysql como driver)
+app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+pymysql://root:Juanjesus200619@localhost/inventario_tenis_padel"
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+# ================================
+# MODELOS
+# ================================
+
+class Producto(db.Model):
+    __tablename__ = 'productos'
+    id_producto = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    descripcion = db.Column(db.Text)
+    precio = db.Column(db.Numeric(10, 2), nullable=False)
+    stock = db.Column(db.Integer, default=0)
+    categoria = db.Column(db.Enum('Tenis', 'Pádel', 'Accesorios'), default='Accesorios')
+    creado_en = db.Column(db.DateTime, default=datetime.utcnow)
+    actualizado_en = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class Venta(db.Model):
+    __tablename__ = 'ventas'
+    id_venta = db.Column(db.Integer, primary_key=True)
+    fecha = db.Column(db.DateTime, default=datetime.utcnow)
+    total = db.Column(db.Numeric(10, 2), nullable=False)
+
+class DetalleVenta(db.Model):
+    __tablename__ = 'detalle_ventas'
+    id_detalle = db.Column(db.Integer, primary_key=True)
+    id_venta = db.Column(db.Integer, db.ForeignKey('ventas.id_venta'), nullable=False)
+    id_producto = db.Column(db.Integer, db.ForeignKey('productos.id_producto'), nullable=False)
+    cantidad = db.Column(db.Integer, nullable=False)
+    precio_unitario = db.Column(db.Numeric(10, 2), nullable=False)
+    subtotal = db.Column(db.Numeric(10, 2), nullable=False)
+
+    venta = db.relationship("Venta", backref="detalles", lazy=True)
+    producto = db.relationship("Producto", backref="detalles", lazy=True)
+
+# ================================
+# RUTAS DE EJEMPLO
+# ================================
+
+# Listar productos (JSON de momento)
+@app.route('/')
+def index():
+    productos = Producto.query.all()
+    return jsonify([{
+        "id": p.id_producto,
+        "nombre": p.nombre,
+        "precio": float(p.precio),
+        "stock": p.stock
+    } for p in productos])
+
+# Agregar producto
+@app.route('/add', methods=['POST'])
+def add_producto():
+    data = request.json
+    nuevo = Producto(
+        nombre=data['nombre'],
+        descripcion=data.get('descripcion', ''),
+        precio=data['precio'],
+        stock=data['stock'],
+        categoria=data.get('categoria', 'Accesorios')
+    )
+    db.session.add(nuevo)
+    db.session.commit()
+    return jsonify({"message": "Producto agregado correctamente"}), 201
+
+# Actualizar producto
+@app.route('/update/<int:id>', methods=['PUT'])
+def update_producto(id):
+    producto = Producto.query.get_or_404(id)
+    data = request.json
+    producto.nombre = data.get('nombre', producto.nombre)
+    producto.descripcion = data.get('descripcion', producto.descripcion)
+    producto.precio = data.get('precio', producto.precio)
+    producto.stock = data.get('stock', producto.stock)
+    producto.categoria = data.get('categoria', producto.categoria)
+    db.session.commit()
+    return jsonify({"message": "Producto actualizado correctamente"})
+
+# Eliminar producto
+@app.route('/delete/<int:id>', methods=['DELETE'])
+def delete_producto(id):
+    producto = Producto.query.get_or_404(id)
+    db.session.delete(producto)
+    db.session.commit()
+    return jsonify({"message": "Producto eliminado correctamente"})
+
+# ================================
+# INICIO
+# ================================
+if __name__ == "__main__":
+    # Crear tablas si no existen
+    with app.app_context():
+        db.create_all()
+    app.run(debug=True)

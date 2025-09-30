@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Mi Perfil{% endblock %}
+{% block page_title %}Mi Perfil{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-person-circle"></i> Información del Perfil
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-12 text-center">
+                        <i class="bi bi-person-circle" style="font-size: 5rem; color: var(--primary-color);"></i>
+                        <h3 class="mt-3">{{ current_user.nombre_usuario }}</h3>
+                        <p class="text-muted">{{ current_user.email }}</p>
+                        {% if current_user.es_admin %}
+                            <span class="badge bg-danger">Administrador</span>
+                        {% else %}
+                            <span class="badge bg-primary">Usuario</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <h5 class="mb-3">Actualizar Información</h5>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.nombre_usuario.label }}</label>
+                        {{ form.nombre_usuario(class="form-control") }}
+                        {% if form.nombre_usuario.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.nombre_usuario.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.email.label }}</label>
+                        {{ form.email(class="form-control") }}
+                        {% if form.email.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.email.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <hr>
+                    
+                    <h5 class="mb-3">Cambiar Contraseña</h5>
+                    <p class="text-muted">Deja estos campos en blanco si no deseas cambiar tu contraseña</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.password.label }}</label>
+                        {{ form.password(class="form-control") }}
+                        <small class="text-muted">Mínimo 8 caracteres</small>
+                        {% if form.password.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.password.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.password2.label }}</label>
+                        {{ form.password2(class="form-control") }}
+                        {% if form.password2.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.password2.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver al Dashboard
+                        </a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <i class="bi bi-info-circle"></i> Información de la Cuenta
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Fecha de Registro:</strong><br>
+                        {{ current_user.creado_en.strftime('%d/%m/%Y %H:%M') }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Último Acceso:</strong><br>
+                        {% if current_user.ultimo_acceso %}
+                            {{ current_user.ultimo_acceso.strftime('%d/%m/%Y %H:%M') }}
+                        {% else %}
+                            <span class="text-muted">Primera vez</span>
+                        {% endif %}
+                        </p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Estado:</strong><br>
+                        {% if current_user.activo %}
+                            <span class="badge bg-success">Activo</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inactivo</span>
+                        {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Rol:</strong><br>
+                        {% if current_user.es_admin %}
+                            <span class="badge bg-danger">Administrador</span>
+                        {% else %}
+                            <span class="badge bg-primary">Usuario</span>
+                        {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

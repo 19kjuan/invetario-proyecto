@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}Gestionar Usuarios{% endblock %}
+{% block page_title %}Gestión de Usuarios{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="bi bi-people"></i> Gestión de Usuarios</h2>
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Agregar Usuario
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-list-ul"></i> Lista de Usuarios ({{ users|length }} usuarios)
+            </div>
+            <div class="card-body">
+                {% if users %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Usuario</th>
+                                <th>Email</th>
+                                <th>Rol</th>
+                                <th>Estado</th>
+                                <th>Último Acceso</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td><strong>#{{ user.id }}</strong></td>
+                                <td>
+                                    <i class="bi bi-person-circle"></i> {{ user.nombre_usuario }}
+                                    <br><small class="text-muted">Registrado: {{ user.creado_en.strftime('%d/%m/%Y') }}</small>
+                                </td>
+                                <td>{{ user.email }}</td>
+                                <td>
+                                    {% if user.es_admin %}
+                                        <span class="badge bg-danger">Administrador</span>
+                                    {% else %}
+                                        <span class="badge bg-primary">Usuario</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.activo %}
+                                        <span class="badge bg-success">Activo</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactivo</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.ultimo_acceso %}
+                                        {{ user.ultimo_acceso.strftime('%d/%m/%Y %H:%M') }}
+                                    {% else %}
+                                        <span class="text-muted">Nunca</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        {% if user.id != current_user.id %}
+                                            {% if user.activo %}
+                                                <button type="button" class="btn btn-sm btn-warning" 
+                                                        onclick="toggleUserStatus({{ user.id }}, false)"
+                                                        title="Desactivar usuario">
+                                                    <i class="bi bi-x-circle"></i>
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn btn-sm btn-success" 
+                                                        onclick="toggleUserStatus({{ user.id }}, true)"
+                                                        title="Activar usuario">
+                                                    <i class="bi bi-check-circle"></i>
+                                                </button>
+                                            {% endif %}
+                                            
+                                            <button type="button" class="btn btn-sm btn-primary" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#editUserModal{{ user.id }}"
+                                                    title="Editar usuario">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            
+                                            <button type="button" class="btn btn-sm btn-danger" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#deleteUserModal{{ user.id }}"
+                                                    title="Eliminar usuario">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        {% else %}
+                                            <span class="badge bg-info">Tú</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-people" style="font-size: 4rem; color: #ccc;"></i>
+                    <h4 class="mt-3 text-muted">No hay usuarios registrados</h4>
+                    <p class="text-muted">Agrega el primer usuario al sistema</p>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary mt-3">
+                        <i class="bi bi-plus-circle"></i> Agregar Primer Usuario
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-info-circle"></i> Información
+            </div>
+            <div class="card-body">
+                <h5>Roles de Usuario</h5>
+                <ul>
+                    <li><strong>Administrador:</strong> Acceso completo al sistema, puede gestionar usuarios, eliminar productos y anular ventas.</li>
+                    <li><strong>Usuario:</strong> Puede gestionar productos y ventas, pero no tiene acceso a funciones administrativas.</li>
+                </ul>
+                
+                <h5 class="mt-4">Notas de Seguridad</h5>
+                <ul>
+                    <li>Todos los usuarios deben cambiar su contraseña después del primer inicio de sesión.</li>
+                    <li>Las contraseñas deben tener al menos 8 caracteres.</li>
+                    <li>Se recomienda usar contraseñas seguras con letras, números y símbolos.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modales para editar y eliminar usuarios -->
+{% for user in users %}
+    {% if user.id != current_user.id %}
+    <!-- Modal Editar Usuario -->
+    <div class="modal fade" id="editUserModal{{ user.id }}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Usuario: {{ user.nombre_usuario }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{{ url_for('auth.edit_user', id=user.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre de Usuario</label>
+                            <input type="text" name="nombre_usuario" class="form-control" value="{{ user.nombre_usuario }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control" value="{{ user.email }}" required>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" name="es_admin" class="form-check-input" id="esAdmin{{ user.id }}" 
+                                   {% if user.es_admin %}checked{% endif %}>
+                            <label class="form-check-label" for="esAdmin{{ user.id }}">
+                                Es Administrador
+                            </label>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" name="activo" class="form-check-input" id="activo{{ user.id }}" 
+                                   {% if user.activo %}checked{% endif %}>
+                            <label class="form-check-label" for="activo{{ user.id }}">
+                                Usuario Activo
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Eliminar Usuario -->
+    <div class="modal fade" id="deleteUserModal{{ user.id }}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Eliminar Usuario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{{ url_for('auth.delete_user', id=user.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div class="modal-body">
+                        <p>¿Estás seguro de que deseas eliminar al usuario <strong>{{ user.nombre_usuario }}</strong>?</p>
+                        <p class="text-danger"><i class="bi bi-exclamation-triangle"></i> Esta acción no se puede deshacer.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger">Eliminar Usuario</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endfor %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleUserStatus(userId, activate) {
+    if (confirm('¿Estás seguro de que deseas ' + (activate ? 'activar' : 'desactivar') + ' este usuario?')) {
+        fetch('/auth/toggle-status/' + userId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ activo: activate })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error al cambiar el estado del usuario');
+            console.error('Error:', error);
+        });
+    }
+}
+</script>
+{% endblock %}

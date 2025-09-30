@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Agregar Producto{% endblock %}
+{% block page_title %}Agregar Nuevo Producto{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-plus-circle"></i> Agregar Nuevo Producto
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ form.codigo.label }}</label>
+                            {{ form.codigo(class="form-control") }}
+                            {% if form.codigo.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.codigo.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ form.categoria.label }}</label>
+                            {{ form.categoria(class="form-select") }}
+                            {% if form.categoria.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.categoria.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.nombre.label }}</label>
+                        {{ form.nombre(class="form-control") }}
+                        {% if form.nombre.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.nombre.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.descripcion.label }}</label>
+                        {{ form.descripcion(class="form-control", rows="3") }}
+                        {% if form.descripcion.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.descripcion.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ form.marca.label }}</label>
+                            {{ form.marca(class="form-control") }}
+                            {% if form.marca.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.marca.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ form.talla.label }}</label>
+                            {{ form.talla(class="form-control") }}
+                            {% if form.talla.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.talla.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ form.color.label }}</label>
+                            {{ form.color(class="form-control") }}
+                            {% if form.color.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.color.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ form.precio_compra.label }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                {{ form.precio_compra(class="form-control") }}
+                            </div>
+                            {% if form.precio_compra.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.precio_compra.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ form.precio_venta.label }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                {{ form.precio_venta(class="form-control") }}
+                            </div>
+                            {% if form.precio_venta.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.precio_venta.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ form.stock_inicial.label }}</label>
+                            {{ form.stock_inicial(class="form-control") }}
+                            {% if form.stock_inicial.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.stock_inicial.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ form.stock_minimo.label }}</label>
+                            {{ form.stock_minimo(class="form-control") }}
+                            <small class="text-muted">Recibirás alertas cuando el stock esté por debajo de este valor</small>
+                            {% if form.stock_minimo.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.stock_minimo.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.imagen.label }}</label>
+                        {{ form.imagen(class="form-control") }}
+                        <small class="text-muted">Formatos permitidos: PNG, JPG, JPEG, GIF, WEBP (máx. 16MB)</small>
+                        {% if form.imagen.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.imagen.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('productos.listar') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Guardar Producto
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

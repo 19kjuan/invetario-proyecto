@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Registrar Usuario{% endblock %}
+{% block page_title %}Registrar Nuevo Usuario{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-person-plus"></i> Registrar Nuevo Usuario
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.nombre_usuario.label }}</label>
+                        {{ form.nombre_usuario(class="form-control") }}
+                        {% if form.nombre_usuario.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.nombre_usuario.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.email.label }}</label>
+                        {{ form.email(class="form-control") }}
+                        {% if form.email.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.email.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.password.label }}</label>
+                        {{ form.password(class="form-control") }}
+                        <small class="text-muted">Mínimo 8 caracteres</small>
+                        {% if form.password.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.password.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.password2.label }}</label>
+                        {{ form.password2(class="form-control") }}
+                        {% if form.password2.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.password2.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        {{ form.es_admin(class="form-check-input") }}
+                        <label class="form-check-label" for="es_admin">
+                            {{ form.es_admin.label.text }}
+                        </label>
+                        <small class="d-block text-muted">Los administradores tienen acceso completo al sistema</small>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('auth.manage_users') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

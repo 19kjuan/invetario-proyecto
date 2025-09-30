@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Ajustar Inventario{% endblock %}
+{% block page_title %}Ajustar Inventario{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-arrow-repeat"></i> Ajustar Inventario: {{ producto.nombre }}
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <strong>Stock Actual:</strong> {{ producto.stock }} unidades
+                </div>
+                
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.cantidad.label }}</label>
+                        {{ form.cantidad(class="form-control", placeholder="Ej: 10 o -5") }}
+                        <small class="text-muted">
+                            Usa números positivos para aumentar el stock o negativos para disminuirlo.<br>
+                            Ejemplo: +10 para agregar 10 unidades, -5 para quitar 5 unidades
+                        </small>
+                        {% if form.cantidad.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.cantidad.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.notas.label }}</label>
+                        {{ form.notas(class="form-control", rows="3", placeholder="Motivo del ajuste...") }}
+                        {% if form.notas.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.notas.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('productos.detalle', id=producto.id) }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Ajustar Inventario
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

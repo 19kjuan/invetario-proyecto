@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Venta #{{ venta.id }}{% endblock %}
+{% block page_title %}Detalle de Venta{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-12">
+        <a href="{{ url_for('ventas.listar') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver a la lista
+        </a>
+        {% if venta.estado in ['pendiente', 'completada'] and current_user.es_admin %}
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#anularModal">
+            <i class="bi bi-x-circle"></i> Anular Venta
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Información de la venta -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-receipt"></i> Información de la Venta #{{ venta.id }}
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p><strong>Fecha:</strong> {{ venta.fecha.strftime('%d/%m/%Y %H:%M') }}</p>
+                        <p><strong>Estado:</strong> 
+                            {% if venta.estado == 'completada' %}
+                                <span class="badge bg-success">Completada</span>
+                            {% elif venta.estado == 'pendiente' %}
+                                <span class="badge bg-warning">Pendiente</span>
+                            {% elif venta.estado == 'anulada' %}
+                                <span class="badge bg-danger">Anulada</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ venta.estado|capitalize }}</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>Método de Pago:</strong> 
+                            <span class="badge bg-info">{{ venta.metodo_pago|capitalize }}</span>
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Cliente:</strong> 
+                            {% if venta.cliente %}
+                                {{ venta.cliente.nombre }} {{ venta.cliente.apellido or '' }}<br>
+                                {% if venta.cliente.email %}
+                                <small class="text-muted">{{ venta.cliente.email }}</small><br>
+                                {% endif %}
+                                {% if venta.cliente.telefono %}
+                                <small class="text-muted">{{ venta.cliente.telefono }}</small>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">Cliente general</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                {% if venta.notas %}
+                <div class="alert alert-info">
+                    <strong>Notas:</strong> {{ venta.notas }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Detalles de productos -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-box-seam"></i> Productos Vendidos
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Precio Unit.</th>
+                                <th>Cantidad</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for detalle in venta.detalles %}
+                            <tr>
+                                <td>
+                                    <strong>{{ detalle.producto.nombre }}</strong><br>
+                                    <small class="text-muted">{{ detalle.producto.codigo }}</small>
+                                </td>
+                                <td>${{ "%.2f"|format(detalle.precio_unitario) }}</td>
+                                <td>{{ detalle.cantidad }}</td>
+                                <td><strong>${{ "%.2f"|format(detalle.subtotal) }}</strong></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-end"><strong>TOTAL:</strong></td>
+                                <td><strong class="fs-5 text-success">${{ "%.2f"|format(venta.total) }}</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Panel lateral -->
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <i class="bi bi-cash-stack"></i> Resumen
+            </div>
+            <div class="card-body text-center">
+                <h1 class="display-4 text-success">${{ "%.2f"|format(venta.total) }}</h1>
+                <p class="text-muted">Total de la venta</p>
+                
+                <hr>
+                
+                <div class="text-start">
+                    <p><strong>Productos:</strong> {{ venta.detalles.count() }}</p>
+                    <p><strong>Unidades:</strong> 
+                        {% set total_unidades = namespace(value=0) %}
+                        {% for detalle in venta.detalles %}
+                            {% set total_unidades.value = total_unidades.value + detalle.cantidad %}
+                        {% endfor %}
+                        {{ total_unidades.value }}
+                    </p>
+                    <p><strong>Vendido por:</strong> {{ venta.usuario.nombre_usuario if venta.usuario else 'N/A' }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-info-circle"></i> Información Adicional
+            </div>
+            <div class="card-body">
+                <p><small class="text-muted">
+                    <i class="bi bi-calendar"></i> Fecha de registro:<br>
+                    {{ venta.fecha.strftime('%d/%m/%Y %H:%M:%S') }}
+                </small></p>
+                
+                {% if venta.estado == 'anulada' and venta.notas %}
+                <div class="alert alert-danger mt-3">
+                    <strong>Motivo de anulación:</strong><br>
+                    {{ venta.notas }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación de anulación -->
+<div class="modal fade" id="anularModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Anular Venta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('ventas.anular', id=venta.id) }}">
+                <div class="modal-body">
+                    <p>¿Estás seguro de que deseas anular esta venta?</p>
+                    <p class="text-danger"><i class="bi bi-exclamation-triangle"></i> Esta acción revertirá el stock de los productos.</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Motivo de la anulación:</label>
+                        <textarea name="motivo" class="form-control" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Anular Venta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

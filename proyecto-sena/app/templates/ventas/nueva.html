@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva Venta{% endblock %}
+{% block page_title %}Registrar Nueva Venta{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-cart-plus"></i> Nueva Venta
+            </div>
+            <div class="card-body">
+                <form method="POST" id="ventaForm">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.cliente_id.label }}</label>
+                            {{ form.cliente_id(class="form-select") }}
+                            <small class="text-muted">Opcional - Deja en blanco para venta sin cliente</small>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.metodo_pago.label }}</label>
+                            {{ form.metodo_pago(class="form-select") }}
+                            {% if form.metodo_pago.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.metodo_pago.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h5 class="mb-3"><i class="bi bi-box-seam"></i> Productos</h5>
+                    
+                    <!-- Buscador de productos -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Buscar Producto</label>
+                            <input type="text" id="buscarProducto" class="form-control" placeholder="Buscar por código o nombre...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">O selecciona un producto</label>
+                            <select id="selectProducto" class="form-select">
+                                <option value="">Seleccione un producto...</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Tabla de productos agregados -->
+                    <div class="table-responsive mb-4">
+                        <table class="table table-bordered" id="tablaProductos">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th width="120">Precio Unit.</th>
+                                    <th width="100">Cantidad</th>
+                                    <th width="120">Subtotal</th>
+                                    <th width="80">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productosBody">
+                                <tr id="emptyRow">
+                                    <td colspan="5" class="text-center text-muted">
+                                        <i class="bi bi-inbox"></i> No hay productos agregados
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>TOTAL:</strong></td>
+                                    <td colspan="2"><strong id="totalVenta">$0.00</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.notas.label }}</label>
+                        {{ form.notas(class="form-control", rows="3") }}
+                    </div>
+                    
+                    <!-- Campo oculto para los detalles -->
+                    {{ form.detalles_venta(id="detalles_venta") }}
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('ventas.listar') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success" id="btnGuardar">
+                            <i class="bi bi-check-circle"></i> Registrar Venta
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let productosVenta = [];
+let productosDisponibles = [];
+
+// Cargar productos al iniciar
+$(document).ready(function() {
+    cargarProductos();
+    
+    // Buscar productos mientras se escribe
+    $('#buscarProducto').on('input', function() {
+        const query = $(this).val();
+        if (query.length >= 2) {
+            buscarProductos(query);
+        }
+    });
+    
+    // Agregar producto desde el select
+    $('#selectProducto').on('change', function() {
+        const productoId = $(this).val();
+        if (productoId) {
+            agregarProducto(productoId);
+            $(this).val('');
+        }
+    });
+    
+    // Validar formulario antes de enviar
+    $('#ventaForm').on('submit', function(e) {
+        if (productosVenta.length === 0) {
+            e.preventDefault();
+            alert('Debes agregar al menos un producto a la venta');
+            return false;
+        }
+        
+        // Actualizar el campo oculto con los detalles
+        $('#detalles_venta').val(JSON.stringify(productosVenta));
+    });
+});
+
+function cargarProductos() {
+    $.ajax({
+        url: '{{ url_for("productos.api_productos") }}',
+        method: 'GET',
+        data: { q: '' },
+        success: function(data) {
+            productosDisponibles = data;
+            actualizarSelectProductos(data);
+        }
+    });
+}
+
+function buscarProductos(query) {
+    $.ajax({
+        url: '{{ url_for("productos.api_productos") }}',
+        method: 'GET',
+        data: { q: query },
+        success: function(data) {
+            actualizarSelectProductos(data);
+        }
+    });
+}
+
+function actualizarSelectProductos(productos) {
+    const select = $('#selectProducto');
+    select.empty();
+    select.append('<option value="">Seleccione un producto...</option>');
+    
+    productos.forEach(function(producto) {
+        select.append(`
+            <option value="${producto.id}" data-producto='${JSON.stringify(producto)}'>
+                ${producto.codigo} - ${producto.nombre} (Stock: ${producto.stock}) - $${producto.precio_venta.toFixed(2)}
+            </option>
+        `);
+    });
+}
+
+function agregarProducto(productoId) {
+    const option = $(`#selectProducto option[value="${productoId}"]`);
+    const producto = JSON.parse(option.attr('data-producto'));
+    
+    // Verificar si el producto ya está en la lista
+    const existe = productosVenta.find(p => p.producto_id === producto.id);
+    if (existe) {
+        alert('Este producto ya está en la lista. Puedes modificar la cantidad directamente.');
+        return;
+    }
+    
+    // Verificar stock
+    if (producto.stock <= 0) {
+        alert('Este producto no tiene stock disponible');
+        return;
+    }
+    
+    // Agregar producto a la lista
+    productosVenta.push({
+        producto_id: producto.id,
+        nombre: producto.nombre,
+        codigo: producto.codigo,
+        precio_unitario: producto.precio_venta,
+        cantidad: 1,
+        stock_disponible: producto.stock
+    });
+    
+    actualizarTabla();
+}
+
+function actualizarTabla() {
+    const tbody = $('#productosBody');
+    tbody.empty();
+    
+    if (productosVenta.length === 0) {
+        tbody.append(`
+            <tr id="emptyRow">
+                <td colspan="5" class="text-center text-muted">
+                    <i class="bi bi-inbox"></i> No hay productos agregados
+                </td>
+            </tr>
+        `);
+        $('#totalVenta').text('$0.00');
+        return;
+    }
+    
+    let total = 0;
+    
+    productosVenta.forEach(function(producto, index) {
+        const subtotal = producto.precio_unitario * producto.cantidad;
+        total += subtotal;
+        
+        tbody.append(`
+            <tr>
+                <td>
+                    <strong>${producto.nombre}</strong><br>
+                    <small class="text-muted">${producto.codigo}</small>
+                </td>
+                <td>$${producto.precio_unitario.toFixed(2)}</td>
+                <td>
+                    <input type="number" 
+                           class="form-control form-control-sm cantidad-input" 
+                           data-index="${index}"
+                           value="${producto.cantidad}" 
+                           min="1" 
+                           max="${producto.stock_disponible}">
+                    <small class="text-muted">Stock: ${producto.stock_disponible}</small>
+                </td>
+                <td>$${subtotal.toFixed(2)}</td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-danger btn-eliminar" data-index="${index}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `);
+    });
+    
+    $('#totalVenta').text('$' + total.toFixed(2));
+    
+    // Event listeners para cantidad
+    $('.cantidad-input').on('change', function() {
+        const index = $(this).data('index');
+        let cantidad = parseInt($(this).val());
+        const stockDisponible = productosVenta[index].stock_disponible;
+        
+        if (cantidad > stockDisponible) {
+            alert(`Solo hay ${stockDisponible} unidades disponibles`);
+            cantidad = stockDisponible;
+            $(this).val(cantidad);
+        }
+        
+        if (cantidad < 1) {
+            cantidad = 1;
+            $(this).val(cantidad);
+        }
+        
+        productosVenta[index].cantidad = cantidad;
+        actualizarTabla();
+    });
+    
+    // Event listeners para eliminar
+    $('.btn-eliminar').on('click', function() {
+        const index = $(this).data('index');
+        productosVenta.splice(index, 1);
+        actualizarTabla();
+    });
+}
+</script>
+{% endblock %}
