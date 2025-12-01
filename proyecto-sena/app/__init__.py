@@ -20,11 +20,13 @@ def create_app(config_class=Config):
     from app.routes.productos import productos_bp
     from app.routes.ventas import ventas_bp
     from app.routes.main import main_bp
+    from app.routes.reportes import reportes_bp
     
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(productos_bp, url_prefix='/productos')
     app.register_blueprint(ventas_bp, url_prefix='/ventas')
     app.register_blueprint(main_bp)
+    app.register_blueprint(reportes_bp, url_prefix='/reportes')
 
     # Crear tablas en la base de datos
     with app.app_context():

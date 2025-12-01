@@ -91,7 +91,7 @@
                                     <strong>{{ detalle.producto.nombre }}</strong><br>
                                     <small class="text-muted">{{ detalle.producto.codigo }}</small>
                                 </td>
-                                <td>${{ "%.2f"|format(detalle.precio_unitario) }}</td>
+                                <td>${{ "%.2f"|format((detalle.subtotal / (detalle.cantidad if detalle.cantidad else 1))) }}</td>
                                 <td>{{ detalle.cantidad }}</td>
                                 <td><strong>${{ "%.2f"|format(detalle.subtotal) }}</strong></td>
                             </tr>

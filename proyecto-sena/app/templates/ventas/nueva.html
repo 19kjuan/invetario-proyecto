@@ -173,9 +173,11 @@ function actualizarSelectProductos(productos) {
     select.append('<option value="">Seleccione un producto...</option>');
     
     productos.forEach(function(producto) {
+        const precio = Number(producto.precio || 0);
+        const codigo = producto.codigo ? producto.codigo + ' - ' : '';
         select.append(`
             <option value="${producto.id}" data-producto='${JSON.stringify(producto)}'>
-                ${producto.codigo} - ${producto.nombre} (Stock: ${producto.stock}) - $${producto.precio_venta.toFixed(2)}
+                ${codigo}${producto.nombre} (Stock: ${producto.stock}) - $${precio.toFixed(2)}
             </option>
         `);
     });
@@ -202,8 +204,8 @@ function agregarProducto(productoId) {
     productosVenta.push({
         producto_id: producto.id,
         nombre: producto.nombre,
-        codigo: producto.codigo,
-        precio_unitario: producto.precio_venta,
+        codigo: producto.codigo || '',
+        precio_unitario: Number(producto.precio || 0),
         cantidad: 1,
         stock_disponible: producto.stock
     });

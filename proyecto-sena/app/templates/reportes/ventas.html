@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-funnel"></i> Filtros de Período
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('reportes.reporte_ventas') }}" class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Fecha Inicio</label>
+                        <input type="date" name="inicio" class="form-control" value="{{ periodo_inicio }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Fecha Fin</label>
+                        <input type="date" name="fin" class="form-control" value="{{ periodo_fin }}">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-search"></i> Generar Reporte
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-bar-chart"></i> Resumen del Período
+                <small class="float-end text-white-50">{{ periodo_inicio }} al {{ periodo_fin }}</small>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-value">{{ resumen.total_ventas or 0 }}</div>
+                            <div class="stat-label">Total Ventas</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-value">${{ "%.2f"|format(resumen.ingresos_totales or 0) }}</div>
+                            <div class="stat-label">Ingresos Totales</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-value">${{ "%.2f"|format(resumen.ticket_promedio or 0) }}</div>
+                            <div class="stat-label">Ticket Promedio</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-trophy"></i> Productos Más Vendidos (Cantidad)
+            </div>
+            <div class="card-body">
+                {% if top_cantidad %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-end">Cantidad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in top_cantidad %}
+                            <tr>
+                                <td>{{ item.nombre }}</td>
+                                <td class="text-end">{{ item.cantidad_total }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2">No hay ventas en este período</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-currency-dollar"></i> Productos con Mayores Ingresos
+            </div>
+            <div class="card-body">
+                {% if top_ingresos %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-end">Ingresos</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in top_ingresos %}
+                            <tr>
+                                <td>{{ item.nombre }}</td>
+                                <td class="text-end">${{ "%.2f"|format(item.ingresos_totales) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2">No hay ventas en este período</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-graph-up"></i> Evolución de Ventas
+            </div>
+            <div class="card-body">
+                <canvas id="ventasChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Datos para el gráfico
+    const ventasData = [];
+    
+    // Datos pasados desde Python
+    const ventasDiarias = {{ ventas_diarias|tojson }};
+    
+    // Procesar los datos para el gráfico
+    ventasDiarias.forEach(function(venta) {
+        ventasData.push({
+            fecha: venta.fecha,
+            cantidad: venta.cantidad,
+            total: venta.total
+        });
+    });
+    
+    // Preparar datos para Chart.js
+    const labels = ventasData.map(d => d.fecha);
+    const cantidades = ventasData.map(d => d.cantidad);
+    const totales = ventasData.map(d => d.total);
+    
+    // Crear gráfico
+    const ctx = document.getElementById('ventasChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Número de Ventas',
+                    data: cantidades,
+                    borderColor: '#007bff',
+                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Total Ventas ($)',
+                    data: totales,
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Número de Ventas'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Total Ventas ($)'
+                    },
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                },
+            }
+        }
+    });
+</script>
+{% endblock %}

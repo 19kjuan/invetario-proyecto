@@ -12,9 +12,7 @@
         <a href="{{ url_for('productos.editar', id=producto.id) }}" class="btn btn-primary">
             <i class="bi bi-pencil"></i> Editar
         </a>
-        <a href="{{ url_for('productos.ajustar_inventario', id=producto.id) }}" class="btn btn-warning">
-            <i class="bi bi-arrow-repeat"></i> Ajustar Inventario
-        </a>
+        
         {% if current_user.es_admin %}
         <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
             <i class="bi bi-trash"></i> Eliminar
@@ -75,12 +73,7 @@
                                 {% endif %}
                             </div>
                             <div class="col-md-6">
-                                <p><strong>Precio de Compra:</strong> ${{ "%.2f"|format(producto.precio_compra) }}</p>
-                                <p><strong>Precio de Venta:</strong> <span class="text-success fs-5">${{ "%.2f"|format(producto.precio_venta) }}</span></p>
-                                <p><strong>Margen:</strong> 
-                                    {% set margen = ((producto.precio_venta - producto.precio_compra) / producto.precio_compra * 100) %}
-                                    <span class="badge bg-success">{{ "%.1f"|format(margen) }}%</span>
-                                </p>
+                                <p><strong>Precio:</strong> <span class="text-success fs-5">${{ "%.2f"|format(producto.precio_venta) }}</span></p>
                             </div>
                         </div>
                         
@@ -101,7 +94,7 @@
                 <i class="bi bi-clock-history"></i> Historial de Movimientos
             </div>
             <div class="card-body">
-                {% if producto.movimientos.count() > 0 %}
+                {% if movimientos_recientes is defined and movimientos_recientes|length > 0 %}
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
@@ -157,34 +150,31 @@
                 <i class="bi bi-box"></i> Estado del Inventario
             </div>
             <div class="card-body text-center">
+                {% set minimo = producto.stock_minimo if (producto.stock_minimo is defined and producto.stock_minimo is not none) else 5 %}
                 <h1 class="display-4 
-                    {% if producto.stock <= producto.stock_minimo %}text-danger
-                    {% elif producto.stock <= producto.stock_minimo * 2 %}text-warning
+                    {% if producto.stock <= minimo %}text-danger
+                    {% elif producto.stock <= minimo * 2 %}text-warning
                     {% else %}text-success{% endif %}">
                     {{ producto.stock }}
                 </h1>
                 <p class="text-muted">unidades disponibles</p>
                 
-                {% if producto.stock <= producto.stock_minimo %}
+                {% if producto.stock <= minimo %}
                 <div class="alert alert-danger">
                     <i class="bi bi-exclamation-triangle"></i> Stock bajo<br>
-                    <small>Mínimo requerido: {{ producto.stock_minimo }}</small>
+                    <small>Mínimo requerido: {{ minimo }}</small>
                 </div>
-                {% elif producto.stock <= producto.stock_minimo * 2 %}
+                {% elif producto.stock <= minimo * 2 %}
                 <div class="alert alert-warning">
                     <i class="bi bi-exclamation-circle"></i> Stock moderado<br>
-                    <small>Mínimo requerido: {{ producto.stock_minimo }}</small>
+                    <small>Mínimo requerido: {{ minimo }}</small>
                 </div>
                 {% else %}
                 <div class="alert alert-success">
                     <i class="bi bi-check-circle"></i> Stock suficiente<br>
-                    <small>Mínimo requerido: {{ producto.stock_minimo }}</small>
+                    <small>Mínimo requerido: {{ minimo }}</small>
                 </div>
                 {% endif %}
-                
-                <a href="{{ url_for('productos.ajustar_inventario', id=producto.id) }}" class="btn btn-warning w-100">
-                    <i class="bi bi-arrow-repeat"></i> Ajustar Stock
-                </a>
             </div>
         </div>
         
@@ -193,14 +183,8 @@
                 <i class="bi bi-graph-up"></i> Valor del Inventario
             </div>
             <div class="card-body">
-                <p><strong>Valor de Compra:</strong><br>
-                    <span class="fs-5">${{ "%.2f"|format(producto.stock * producto.precio_compra) }}</span>
-                </p>
-                <p><strong>Valor de Venta:</strong><br>
+                <p><strong>Valor de Inventario (Precio):</strong><br>
                     <span class="fs-5 text-success">${{ "%.2f"|format(producto.stock * producto.precio_venta) }}</span>
-                </p>
-                <p><strong>Ganancia Potencial:</strong><br>
-                    <span class="fs-5 text-primary">${{ "%.2f"|format(producto.stock * (producto.precio_venta - producto.precio_compra)) }}</span>
                 </p>
             </div>
         </div>

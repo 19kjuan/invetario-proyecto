@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user
 from sqlalchemy import or_
 from app import db
-from app.models import Producto, MovimientoInventario, Configuracion
+from app.models import Producto, Configuracion
 from app.forms import ProductoForm, AjusteInventarioForm
 from datetime import datetime
 import os
@@ -27,7 +27,6 @@ def listar():
         search = f"%{search}%"
         query = query.filter(
             or_(
-                Producto.codigo.like(search),
                 Producto.nombre.like(search),
                 Producto.descripcion.like(search)
             )
@@ -70,7 +69,7 @@ def agregar():
                 archivo.save(os.path.join(upload_folder, filename))
                 imagen_nombre = filename
         
-        # Crear el producto
+        # Crear el producto (guardar imagen si se cargó)
         producto = Producto(
             codigo=form.codigo.data,
             nombre=form.nombre.data,
@@ -83,21 +82,11 @@ def agregar():
             marca=form.marca.data,
             talla=form.talla.data,
             color=form.color.data,
-            imagen=imagen_nombre
+            imagen=imagen_nombre,
+            activo=True
         )
         
         db.session.add(producto)
-        
-        # Registrar el movimiento de inventario inicial si hay stock
-        if form.stock_inicial.data > 0:
-            movimiento = MovimientoInventario(
-                tipo='entrada',
-                cantidad=form.stock_inicial.data,
-                notas='Carga inicial de inventario',
-                producto=producto,
-                usuario_id=current_user.id
-            )
-            db.session.add(movimiento)
         
         db.session.commit()
         
@@ -113,17 +102,9 @@ def agregar():
 def detalle(id):
     producto = Producto.query.get_or_404(id)
     
-    # Obtener los últimos 10 movimientos de inventario ordenados por fecha descendente
-    movimientos_recientes = MovimientoInventario.query.filter_by(
-        producto_id=id
-    ).order_by(
-        MovimientoInventario.fecha.desc()
-    ).limit(10).all()
-    
     return render_template('productos/detalle.html', 
                          title=producto.nombre, 
-                         producto=producto,
-                         movimientos_recientes=movimientos_recientes)
+                         producto=producto)
 
 @productos_bp.route('/editar/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -165,6 +146,7 @@ def editar(id):
         producto.descripcion = form.descripcion.data
         producto.precio_compra = form.precio_compra.data
         producto.precio_venta = form.precio_venta.data
+        producto.stock = form.stock_inicial.data if form.stock_inicial.data is not None else producto.stock
         producto.stock_minimo = form.stock_minimo.data
         producto.categoria = form.categoria.data
         producto.marca = form.marca.data
@@ -207,38 +189,6 @@ def eliminar(id):
     flash('Producto eliminado correctamente.', 'success')
     return redirect(url_for('productos.listar'))
 
-@productos_bp.route('/ajustar-inventario/<int:id>', methods=['GET', 'POST'])
-@login_required
-def ajustar_inventario(id):
-    producto = Producto.query.get_or_404(id)
-    form = AjusteInventarioForm()
-    
-    if form.validate_on_submit():
-        cantidad = form.cantidad.data
-        notas = form.notas.data or 'Ajuste de inventario'
-        
-        # Actualizar el stock
-        producto.stock += cantidad
-        
-        # Registrar el movimiento
-        movimiento = MovimientoInventario(
-            tipo='ajuste',
-            cantidad=cantidad,
-            notas=notas,
-            producto=producto,
-            usuario_id=current_user.id
-        )
-        
-        db.session.add(movimiento)
-        db.session.commit()
-        
-        flash(f'Se ajustó el inventario en {cantidad} unidades. Nuevo stock: {producto.stock}', 'success')
-        return redirect(url_for('productos.detalle', id=producto.id))
-    
-    return render_template('productos/ajustar_inventario.html',
-                         title='Ajustar Inventario',
-                         form=form,
-                         producto=producto)
 
 @productos_bp.route('/bajo-stock')
 @login_required
@@ -254,8 +204,7 @@ def bajo_stock():
     
     # Filtrar productos con stock menor o igual al umbral
     productos = Producto.query.filter(
-        Producto.stock <= umbral,
-        Producto.activo == True
+        Producto.stock <= umbral
     ).order_by(
         Producto.stock.asc()
     ).paginate(
@@ -276,9 +225,7 @@ def api_productos():
     search = request.args.get('q', '')
     
     query = Producto.query.filter(
-        Producto.activo == True,
         or_(
-            Producto.codigo.ilike(f'%{search}%'),
             Producto.nombre.ilike(f'%{search}%')
         )
     ).limit(10)
@@ -287,8 +234,9 @@ def api_productos():
         'id': p.id,
         'codigo': p.codigo,
         'nombre': p.nombre,
-        'precio_venta': float(p.precio_venta) if p.precio_venta else 0,
-        'stock': p.stock
+        'precio': float(p.precio_venta) if p.precio_venta else 0,
+        'stock': p.stock,
+        'imagen': p.imagen
     } for p in query]
     
     return jsonify(productos)

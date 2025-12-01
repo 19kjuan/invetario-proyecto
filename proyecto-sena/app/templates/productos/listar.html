@@ -73,21 +73,25 @@
                         <tbody>
                             {% for producto in productos.items %}
                             <tr>
-                                <td><strong>{{ producto.codigo }}</strong></td>
+                                <td><strong>
+                                    {% if producto.codigo is defined and producto.codigo %}
+                                        {{ producto.codigo }}
+                                    {% else %}-{% endif %}
+                                </strong></td>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        {% if producto.imagen %}
-                                        <img src="{{ url_for('static', filename='uploads/' + producto.imagen) }}" 
-                                             alt="{{ producto.nombre }}" 
-                                             style="width: 40px; height: 40px; object-fit: cover; border-radius: 5px; margin-right: 10px;">
+                                        {% if producto.imagen is defined and producto.imagen %}
+                                            <img src="{{ url_for('static', filename='uploads/' + producto.imagen) }}" 
+                                                 alt="{{ producto.nombre }}" 
+                                                 style="width: 40px; height: 40px; object-fit: cover; border-radius: 5px; margin-right: 10px;">
                                         {% else %}
-                                        <div style="width: 40px; height: 40px; background-color: #e9ecef; border-radius: 5px; margin-right: 10px; display: flex; align-items: center; justify-content: center;">
-                                            <i class="bi bi-image text-muted"></i>
-                                        </div>
+                                            <div style="width: 40px; height: 40px; background-color: #e9ecef; border-radius: 5px; margin-right: 10px; display: flex; align-items: center; justify-content: center;">
+                                                <i class="bi bi-image text-muted"></i>
+                                            </div>
                                         {% endif %}
                                         <div>
                                             <strong>{{ producto.nombre }}</strong><br>
-                                            {% if producto.marca %}
+                                            {% if producto.marca is defined and producto.marca %}
                                             <small class="text-muted">{{ producto.marca }}</small>
                                             {% endif %}
                                         </div>
@@ -103,17 +107,18 @@
                                 </td>
                                 <td><strong>${{ "%.2f"|format(producto.precio_venta) }}</strong></td>
                                 <td>
-                                    {% if producto.stock <= producto.stock_minimo %}
+                                    {% set minimo = producto.stock_minimo if (producto.stock_minimo is defined and producto.stock_minimo is not none) else 5 %}
+                                    {% if producto.stock <= minimo %}
                                         <span class="badge bg-danger">{{ producto.stock }}</span>
                                         <i class="bi bi-exclamation-triangle text-danger" title="Stock bajo"></i>
-                                    {% elif producto.stock <= producto.stock_minimo * 2 %}
+                                    {% elif producto.stock <= minimo * 2 %}
                                         <span class="badge bg-warning">{{ producto.stock }}</span>
                                     {% else %}
                                         <span class="badge bg-success">{{ producto.stock }}</span>
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% if producto.activo %}
+                                    {% if producto.activo is not defined or producto.activo %}
                                         <span class="badge bg-success">Activo</span>
                                     {% else %}
                                         <span class="badge bg-secondary">Inactivo</span>
@@ -128,10 +133,6 @@
                                         <a href="{{ url_for('productos.editar', id=producto.id) }}" 
                                            class="btn btn-sm btn-outline-primary" title="Editar">
                                             <i class="bi bi-pencil"></i>
-                                        </a>
-                                        <a href="{{ url_for('productos.ajustar_inventario', id=producto.id) }}" 
-                                           class="btn btn-sm btn-outline-warning" title="Ajustar inventario">
-                                            <i class="bi bi-arrow-repeat"></i>
                                         </a>
                                     </div>
                                 </td>

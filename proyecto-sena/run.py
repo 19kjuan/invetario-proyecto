@@ -1,6 +1,6 @@
 import os
 from app import create_app, db
-from app.models import Usuario, Producto, Venta, DetalleVenta, Cliente, MovimientoInventario, Configuracion
+from app.models import Usuario, Producto, Venta, DetalleVenta, Configuracion
 
 app = create_app()
 
@@ -13,8 +13,6 @@ def make_shell_context():
         'Producto': Producto,
         'Venta': Venta,
         'DetalleVenta': DetalleVenta,
-        'Cliente': Cliente,
-        'MovimientoInventario': MovimientoInventario,
         'Configuracion': Configuracion
     }
 
@@ -64,125 +62,55 @@ def create_sample_data():
         print("Ya existen productos en la base de datos.")
         return
     
-    # Obtener el usuario admin
-    admin = Usuario.query.filter_by(email='admin@inventario.com').first()
-    if not admin:
-        print("Error: No existe el usuario administrador. Ejecuta 'flask init-db' primero.")
-        return
-    
     # Crear productos de ejemplo
     productos_ejemplo = [
         {
-            'codigo': 'RAQ-001',
-            'nombre': 'Raqueta Wilson Pro Staff',
-            'descripcion': 'Raqueta profesional de tenis, ideal para jugadores avanzados',
-            'precio_compra': 350000,
-            'precio_venta': 520000,
+            'nombre': 'Raqueta Tenis Wilson Pro Staff',
+            'descripcion': 'Raqueta profesional para tenis avanzado',
+            'precio': 350.00,
+            'stock': 10,
+            'categoria': 'Tenis'
+        },
+        {
+            'nombre': 'Raqueta Pádel Bullpadel Vertex',
+            'descripcion': 'Raqueta de pádel de alta gama',
+            'precio': 280.00,
             'stock': 15,
-            'stock_minimo': 3,
-            'categoria': 'Tenis',
-            'marca': 'Wilson',
-            'color': 'Negro/Rojo'
+            'categoria': 'Pádel'
         },
         {
-            'codigo': 'RAQ-002',
-            'nombre': 'Raqueta Head Graphene 360',
-            'descripcion': 'Raqueta de pádel con tecnología Graphene 360',
-            'precio_compra': 280000,
-            'precio_venta': 420000,
-            'stock': 12,
-            'stock_minimo': 3,
-            'categoria': 'Pádel',
-            'marca': 'Head',
-            'color': 'Azul/Blanco'
+            'nombre': 'Pelotas Tenis Head (tubo x3)',
+            'descripcion': 'Tubo con 3 pelotas presurizadas',
+            'precio': 8.50,
+            'stock': 100,
+            'categoria': 'Tenis'
         },
         {
-            'codigo': 'PEL-001',
-            'nombre': 'Pelotas Wilson Championship',
-            'descripcion': 'Tubo de 3 pelotas de tenis profesionales',
-            'precio_compra': 12000,
-            'precio_venta': 18000,
+            'nombre': 'Pelotas Pádel Dunlop (pack x3)',
+            'descripcion': 'Pack de 3 pelotas de pádel',
+            'precio': 7.00,
+            'stock': 80,
+            'categoria': 'Pádel'
+        },
+        {
+            'nombre': 'Grip Antideslizante',
+            'descripcion': 'Grip universal para raquetas',
+            'precio': 4.00,
             'stock': 50,
-            'stock_minimo': 10,
-            'categoria': 'Accesorios',
-            'marca': 'Wilson',
-            'color': 'Amarillo'
+            'categoria': 'Accesorios'
         },
         {
-            'codigo': 'ZAP-001',
-            'nombre': 'Zapatillas Nike Court Air Zoom',
-            'descripcion': 'Zapatillas de tenis con tecnología Air Zoom',
-            'precio_compra': 180000,
-            'precio_venta': 280000,
-            'stock': 8,
-            'stock_minimo': 2,
-            'categoria': 'Tenis',
-            'marca': 'Nike',
-            'talla': '42',
-            'color': 'Blanco'
-        },
-        {
-            'codigo': 'BOL-001',
-            'nombre': 'Bolso Head Tour Team',
-            'descripcion': 'Bolso deportivo para raquetas y accesorios',
-            'precio_compra': 95000,
-            'precio_venta': 145000,
-            'stock': 6,
-            'stock_minimo': 2,
-            'categoria': 'Accesorios',
-            'marca': 'Head',
-            'color': 'Negro/Azul'
-        },
-        {
-            'codigo': 'GRI-001',
-            'nombre': 'Grip Wilson Pro Overgrip',
-            'descripcion': 'Pack de 3 overgrips profesionales',
-            'precio_compra': 8000,
-            'precio_venta': 15000,
-            'stock': 30,
-            'stock_minimo': 8,
-            'categoria': 'Accesorios',
-            'marca': 'Wilson',
-            'color': 'Blanco'
+            'nombre': 'Bolso Wilson Super Tour',
+            'descripcion': 'Bolso grande para raquetas y accesorios',
+            'precio': 120.00,
+            'stock': 20,
+            'categoria': 'Accesorios'
         }
     ]
     
     for prod_data in productos_ejemplo:
         producto = Producto(**prod_data)
         db.session.add(producto)
-        
-        # Registrar movimiento de inventario inicial
-        if prod_data['stock'] > 0:
-            movimiento = MovimientoInventario(
-                tipo='entrada',
-                cantidad=prod_data['stock'],
-                notas='Carga inicial de inventario',
-                producto=producto,
-                usuario_id=admin.id
-            )
-            db.session.add(movimiento)
-    
-    # Crear clientes de ejemplo
-    clientes_ejemplo = [
-        {
-            'nombre': 'Juan',
-            'apellido': 'Pérez',
-            'email': 'juan.perez@example.com',
-            'telefono': '3001234567',
-            'direccion': 'Calle 123 #45-67'
-        },
-        {
-            'nombre': 'María',
-            'apellido': 'García',
-            'email': 'maria.garcia@example.com',
-            'telefono': '3009876543',
-            'direccion': 'Carrera 45 #12-34'
-        }
-    ]
-    
-    for cliente_data in clientes_ejemplo:
-        cliente = Cliente(**cliente_data)
-        db.session.add(cliente)
     
     db.session.commit()
     print("Datos de ejemplo creados correctamente!")

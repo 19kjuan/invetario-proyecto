@@ -6,68 +6,76 @@
 {% block content %}
 <div class="row mb-4">
     <!-- Estadísticas principales -->
-    <div class="col-md-3 mb-3">
-        <div class="card stat-card">
+    <div class="col-md-3 mb-4">
+        <div class="stat-card">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted mb-2">Ventas Hoy</h6>
-                        <h3 class="mb-0">${{ "%.2f"|format(estadisticas.ventas_hoy.total) }}</h3>
-                        <small class="text-muted">{{ estadisticas.ventas_hoy.cantidad }} ventas</small>
+                <div class="d-flex">
+                    <div class="stat-icon bg-primary">
+                        <i class="bi bi-cash-stack"></i>
                     </div>
                     <div>
-                        <i class="bi bi-cash-stack" style="font-size: 2.5rem; color: var(--success-color);"></i>
+                        <p class="stat-label">Ventas Hoy</p>
+                        <h3>${{ "%.2f"|format(estadisticas.ventas_hoy.total) }}</h3>
+                        <div class="stat-change positive">
+                            <i class="bi bi-arrow-up"></i> {{ estadisticas.ventas_hoy.cantidad }} ventas
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="col-md-3 mb-3">
-        <div class="card stat-card success">
+    <div class="col-md-3 mb-4">
+        <div class="stat-card">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted mb-2">Ventas del Mes</h6>
-                        <h3 class="mb-0">${{ "%.2f"|format(estadisticas.ventas_mes.total) }}</h3>
-                        <small class="text-muted">{{ estadisticas.ventas_mes.cantidad }} ventas</small>
+                <div class="d-flex">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #2ecc71, #27ae60);">
+                        <i class="bi bi-graph-up-arrow"></i>
                     </div>
                     <div>
-                        <i class="bi bi-graph-up-arrow" style="font-size: 2.5rem; color: var(--success-color);"></i>
+                        <p class="stat-label">Ventas del Mes</p>
+                        <h3>${{ "%.2f"|format(estadisticas.ventas_mes.total) }}</h3>
+                        <div class="stat-change positive">
+                            <i class="bi bi-arrow-up"></i> {{ estadisticas.ventas_mes.cantidad }} ventas
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="col-md-3 mb-3">
-        <div class="card stat-card warning">
+    <div class="col-md-3 mb-4">
+        <div class="stat-card">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted mb-2">Total Productos</h6>
-                        <h3 class="mb-0">{{ estadisticas.total_productos }}</h3>
-                        <small class="text-muted">productos activos</small>
+                <div class="d-flex">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, var(--dorado), #b38f2a);">
+                        <i class="bi bi-box-seam"></i>
                     </div>
                     <div>
-                        <i class="bi bi-box-seam" style="font-size: 2.5rem; color: var(--warning-color);"></i>
+                        <p class="stat-label">Total Productos</p>
+                        <h3>{{ estadisticas.total_productos }}</h3>
+                        <div class="stat-change">
+                            <i class="bi bi-box"></i> productos activos
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="col-md-3 mb-3">
-        <div class="card stat-card danger">
+    <div class="col-md-3 mb-4">
+        <div class="stat-card">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted mb-2">Stock Bajo</h6>
-                        <h3 class="mb-0">{{ estadisticas.productos_bajo_stock_count }}</h3>
-                        <small class="text-muted">productos</small>
+                <div class="d-flex">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #ff4757, #ff6b81);">
+                        <i class="bi bi-exclamation-triangle"></i>
                     </div>
                     <div>
-                        <i class="bi bi-exclamation-triangle" style="font-size: 2.5rem; color: var(--danger-color);"></i>
+                        <p class="stat-label">Stock Bajo</p>
+                        <h3>{{ estadisticas.productos_bajo_stock_count }}</h3>
+                        <div class="stat-change">
+                            <i class="bi bi-exclamation-circle"></i> revisar inventario
+                        </div>
                     </div>
                 </div>
             </div>

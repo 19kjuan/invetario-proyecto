@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import func, extract, and_, or_
 from app import db
 from app.models import (
-    Venta, DetalleVenta, Producto, Cliente, MovimientoInventario, Usuario, Configuracion
+    Venta, DetalleVenta, Producto, Usuario, Configuracion
 )
 from app.forms import VentaForm, ClienteForm, FiltroVentasForm
 import json
@@ -33,35 +33,39 @@ def listar():
         fecha_inicio_dt = inicio_mes
         fecha_fin_dt = hoy + timedelta(days=1)
     
+    # Obtener filtros adicionales
+    estado = request.args.get('estado', '')
+    metodo_pago = request.args.get('metodo_pago', '')
+    
     # Construir la consulta base
     query = Venta.query.filter(
         Venta.fecha.between(fecha_inicio_dt, fecha_fin_dt)
     )
     
-    # Aplicar filtros adicionales si se proporcionan
-    if 'estado' in request.args and request.args['estado']:
-        query = query.filter(Venta.estado == request.args['estado'])
-    
-    if 'metodo_pago' in request.args and request.args['metodo_pago']:
-        query = query.filter(Venta.metodo_pago == request.args['metodo_pago'])
-    
-    if 'cliente_id' in request.args and request.args['cliente_id']:
-        query = query.filter(Venta.cliente_id == request.args['cliente_id'])
+    # Aplicar filtros adicionales si existen
+    if estado:
+        query = query.filter(Venta.estado == estado)
+    if metodo_pago:
+        query = query.filter(Venta.metodo_pago == metodo_pago)
     
     # Ordenar por fecha más reciente primero
     ventas = query.order_by(Venta.fecha.desc()).paginate(
         page=page, per_page=current_app.config['ITEMS_POR_PAGINA'], error_out=False)
     
     # Calcular totales
-    total_ventas = db.session.query(func.sum(Venta.total)).filter(
-        Venta.fecha.between(fecha_inicio_dt, fecha_fin_dt),
-        Venta.estado == 'completada'
-    ).scalar() or 0
+    total_query = db.session.query(func.sum(Venta.total)).filter(
+        Venta.fecha.between(fecha_inicio_dt, fecha_fin_dt)
+    )
+    if estado:
+        total_query = total_query.filter(Venta.estado == estado)
+    if metodo_pago:
+        total_query = total_query.filter(Venta.metodo_pago == metodo_pago)
+    total_ventas = total_query.scalar() or 0
     
     total_ventas = float(total_ventas)
     
     # Obtener estadísticas por categoría
-    stats_categorias = db.session.query(
+    stats_query = db.session.query(
         Producto.categoria,
         func.sum(DetalleVenta.cantidad).label('cantidad'),
         func.sum(DetalleVenta.subtotal).label('total')
@@ -70,14 +74,18 @@ def listar():
     ).join(
         Venta, Venta.id == DetalleVenta.venta_id
     ).filter(
-        Venta.fecha.between(fecha_inicio_dt, fecha_fin_dt),
-        Venta.estado == 'completada'
-    ).group_by(
+        Venta.fecha.between(fecha_inicio_dt, fecha_fin_dt)
+    )
+    if estado:
+        stats_query = stats_query.filter(Venta.estado == estado)
+    if metodo_pago:
+        stats_query = stats_query.filter(Venta.metodo_pago == metodo_pago)
+    stats_categorias = stats_query.group_by(
         Producto.categoria
     ).all()
     
     # Obtener los 5 productos más vendidos
-    productos_mas_vendidos = db.session.query(
+    top_productos_query = db.session.query(
         Producto.nombre,
         func.sum(DetalleVenta.cantidad).label('cantidad'),
         func.sum(DetalleVenta.subtotal).label('total')
@@ -86,9 +94,13 @@ def listar():
     ).join(
         Venta, Venta.id == DetalleVenta.venta_id
     ).filter(
-        Venta.fecha.between(fecha_inicio_dt, fecha_fin_dt),
-        Venta.estado == 'completada'
-    ).group_by(
+        Venta.fecha.between(fecha_inicio_dt, fecha_fin_dt)
+    )
+    if estado:
+        top_productos_query = top_productos_query.filter(Venta.estado == estado)
+    if metodo_pago:
+        top_productos_query = top_productos_query.filter(Venta.metodo_pago == metodo_pago)
+    productos_mas_vendidos = top_productos_query.group_by(
         Producto.id, Producto.nombre
     ).order_by(
         func.sum(DetalleVenta.cantidad).desc()
@@ -98,9 +110,8 @@ def listar():
     filtros = {
         'fecha_inicio': fecha_inicio_dt.strftime('%Y-%m-%d'),
         'fecha_fin': (fecha_fin_dt - timedelta(days=1)).strftime('%Y-%m-%d'),
-        'estado': request.args.get('estado', ''),
-        'metodo_pago': request.args.get('metodo_pago', ''),
-        'cliente_id': request.args.get('cliente_id', '')
+        'estado': estado,
+        'metodo_pago': metodo_pago
     }
     
     return render_template('ventas/listar.html',
@@ -116,21 +127,19 @@ def listar():
 @login_required
 def nueva():
     form = VentaForm()
-    
-    # Cargar clientes para el select
-    clientes = [(str(c.id), f"{c.nombre} {c.apellido or ''}".strip()) for c in Cliente.query.order_by(Cliente.nombre).all()]
-    form.cliente_id.choices = [('', 'Seleccione un cliente...')] + clientes
+    # Evitar error de WTForms: Choices cannot be None
+    # No existe modelo de clientes; usar opción por defecto "Cliente general"
+    try:
+        if not getattr(form.cliente_id, 'choices', None):
+            form.cliente_id.choices = [('', 'Cliente general')]
+    except Exception:
+        form.cliente_id.choices = [('', 'Cliente general')]
     
     if form.validate_on_submit():
         try:
             # Crear la venta
             venta = Venta(
-                total=0,  # Se calculará con los detalles
-                estado='pendiente',
-                metodo_pago=form.metodo_pago.data,
-                notas=form.notas.data,
-                usuario_id=current_user.id,
-                cliente_id=form.cliente_id.data or None
+                total=0  # Se calculará con los detalles
             )
             
             db.session.add(venta)
@@ -154,7 +163,6 @@ def nueva():
                     venta_id=venta.id,
                     producto_id=producto.id,
                     cantidad=cantidad,
-                    precio_unitario=precio_unitario,
                     subtotal=subtotal
                 )
                 
@@ -163,21 +171,9 @@ def nueva():
                 
                 # Actualizar el stock del producto
                 producto.stock -= cantidad
-                
-                # Registrar el movimiento de inventario
-                movimiento = MovimientoInventario(
-                    tipo='salida',
-                    cantidad=cantidad,
-                    notas=f'Venta #{venta.id}',
-                    producto_id=producto.id,
-                    usuario_id=current_user.id,
-                    venta_id=venta.id
-                )
-                db.session.add(movimiento)
             
             # Actualizar el total de la venta
             venta.total = total_venta
-            venta.estado = 'completada'
             
             db.session.commit()
             
@@ -201,70 +197,34 @@ def detalle(id):
                          title=f'Venta #{venta.id}',
                          venta=venta)
 
+
+
 @ventas_bp.route('/anular/<int:id>', methods=['POST'])
 @login_required
 def anular(id):
     venta = Venta.query.get_or_404(id)
-    
-    # Solo se pueden anular ventas pendientes o completadas
-    if venta.estado not in ['pendiente', 'completada']:
-        flash('No se puede anular una venta que ya ha sido anulada o cancelada.', 'warning')
-        return redirect(url_for('ventas.detalle', id=id))
-    
     try:
-        # Revertir el stock de los productos
-        for detalle in venta.detalles:
-            producto = detalle.producto
-            producto.stock += detalle.cantidad
-            
-            # Registrar el movimiento de inventario
-            movimiento = MovimientoInventario(
-                tipo='devolucion',
-                cantidad=detalle.cantidad,
-                notas=f'Anulación de venta #{venta.id}',
-                producto_id=producto.id,
-                usuario_id=current_user.id,
-                venta_id=venta.id
-            )
-            db.session.add(movimiento)
+        # Actualizar estado si existe el atributo
+        if hasattr(venta, 'estado'):
+            venta.estado = 'anulada'
+        # Guardar motivo si corresponde
+        motivo = request.form.get('motivo', '').strip()
+        if motivo and hasattr(venta, 'notas'):
+            venta.notas = motivo
         
-        # Marcar la venta como anulada
-        venta.estado = 'anulada'
-        venta.notas = f"Anulada por {current_user.nombre_usuario} - {request.form.get('motivo', 'Sin motivo especificado')}"
+        # Revertir stock de productos vendidos
+        for detalle in venta.detalles:
+            if hasattr(detalle, 'producto') and detalle.producto:
+                detalle.producto.stock += int(detalle.cantidad or 0)
         
         db.session.commit()
-        
-        flash('Venta anulada exitosamente. El stock ha sido actualizado.', 'success')
-        
+        flash('La venta ha sido anulada y el stock ha sido revertido.', 'success')
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f'Error al anular la venta: {str(e)}')
-        flash('Ocurrió un error al anular la venta. Por favor, inténtalo de nuevo.', 'danger')
+        current_app.logger.error(f'Error al anular la venta {id}: {str(e)}')
+        flash('Ocurrió un error al anular la venta.', 'danger')
     
     return redirect(url_for('ventas.detalle', id=id))
-
-@ventas_bp.route('/api/clientes')
-@login_required
-def api_clientes():
-    """API para autocompletado de clientes"""
-    search = request.args.get('q', '')
-    
-    query = Cliente.query.filter(
-        or_(
-            Cliente.nombre.ilike(f'%{search}%'),
-            Cliente.apellido.ilike(f'%{search}%'),
-            Cliente.email.ilike(f'%{search}%')
-        )
-    ).limit(10)
-    
-    clientes = [{
-        'id': c.id,
-        'nombre': f"{c.nombre} {c.apellido or ''}".strip(),
-        'email': c.email or '',
-        'telefono': c.telefono or ''
-    } for c in query]
-    
-    return jsonify(clientes)
 
 @ventas_bp.route('/api/ventas/estadisticas')
 @login_required
@@ -288,8 +248,7 @@ def api_estadisticas():
         func.count(Venta.id).label('cantidad'),
         func.sum(Venta.total).label('total')
     ).filter(
-        Venta.fecha.between(fecha_inicio_dt, fecha_fin_dt),
-        Venta.estado == 'completada'
+        Venta.fecha.between(fecha_inicio_dt, fecha_fin_dt)
     ).group_by(
         func.date(Venta.fecha)
     ).order_by(
@@ -306,22 +265,9 @@ def api_estadisticas():
     ).join(
         Venta, Venta.id == DetalleVenta.venta_id
     ).filter(
-        Venta.fecha.between(fecha_inicio_dt, fecha_fin_dt),
-        Venta.estado == 'completada'
+        Venta.fecha.between(fecha_inicio_dt, fecha_fin_dt)
     ).group_by(
         Producto.categoria
-    ).all()
-    
-    # Métodos de pago
-    metodos_pago = db.session.query(
-        Venta.metodo_pago,
-        func.count(Venta.id).label('cantidad'),
-        func.sum(Venta.total).label('total')
-    ).filter(
-        Venta.fecha.between(fecha_inicio_dt, fecha_fin_dt),
-        Venta.estado == 'completada'
-    ).group_by(
-        Venta.metodo_pago
     ).all()
     
     # Preparar datos para la respuesta
@@ -338,28 +284,20 @@ def api_estadisticas():
             'total': float(v.total) if v.total else 0
         } for v in ventas_por_categoria],
         
-        'metodos_pago': [{
-            'metodo': v.metodo_pago,
-            'cantidad': v.cantidad or 0,
-            'total': float(v.total) if v.total else 0
-        } for v in metodos_pago],
         
         'resumen': {
             'total_ventas': float(db.session.query(func.sum(Venta.total)).filter(
-                Venta.fecha.between(fecha_inicio_dt, fecha_fin_dt),
-                Venta.estado == 'completada'
+                Venta.fecha.between(fecha_inicio_dt, fecha_fin_dt)
             ).scalar() or 0),
             
             'total_ventas_count': db.session.query(func.count(Venta.id)).filter(
-                Venta.fecha.between(fecha_inicio_dt, fecha_fin_dt),
-                Venta.estado == 'completada'
+                Venta.fecha.between(fecha_inicio_dt, fecha_fin_dt)
             ).scalar() or 0,
             
             'ticket_promedio': float(db.session.query(
                 func.avg(Venta.total)
             ).filter(
-                Venta.fecha.between(fecha_inicio_dt, fecha_fin_dt),
-                Venta.estado == 'completada'
+                Venta.fecha.between(fecha_inicio_dt, fecha_fin_dt)
             ).scalar() or 0)
         }
     }

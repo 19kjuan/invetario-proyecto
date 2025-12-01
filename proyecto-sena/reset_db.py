@@ -47,18 +47,13 @@ def reset_database():
     except Exception as e:
         print(f"\nError: {e}")
     finally:
-        if 'connection' in locals():
             cursor.close()
             connection.close()
 
 if __name__ == '__main__':
     print("=" * 60)
-    print("RESETEAR BASE DE DATOS")
+    print("REINICIANDO BASE DE DATOS")
     print("=" * 60)
-    print("\nADVERTENCIA: Esto eliminara TODAS las tablas y datos.")
-    respuesta = input("\nEstas seguro de que deseas continuar? (si/no): ")
-    
-    if respuesta.lower() in ['si', 's', 'yes', 'y']:
-        reset_database()
-    else:
-        print("\nOperacion cancelada.")
+    print("\nReiniciando la base de datos...\n")
+    reset_database()
+    print("\nBase de datos reiniciada exitosamente!")
